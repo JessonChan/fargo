@@ -23,7 +23,7 @@
 // }
 //
 // more infomation: http://beego.me
-package beego
+package fargo
 
 import (
 	"net/http"

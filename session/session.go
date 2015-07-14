@@ -143,14 +143,17 @@ func (manager *Manager) SessionStart(w http.ResponseWriter, r *http.Request) (se
 			return nil, errs
 		}
 		session, err = manager.provider.SessionRead(sid)
-		cookie = &http.Cookie{Name: manager.config.CookieName,
+		cookie = &http.Cookie{
+			Name:     manager.config.CookieName,
 			Value:    url.QueryEscape(sid),
 			Path:     "/",
 			HttpOnly: true,
-			Secure:   manager.config.Secure,
-			Domain:   manager.config.Domain}
-		if manager.config.CookieLifeTime >= 0 {
+			Secure:   manager.isSecure(r),
+			Domain:   manager.config.Domain,
+		}
+		if manager.config.CookieLifeTime > 0 {
 			cookie.MaxAge = manager.config.CookieLifeTime
+			cookie.Expires = time.Now().Add(time.Duration(manager.config.CookieLifeTime) * time.Second)
 		}
 		if manager.config.EnableSetCookie {
 			http.SetCookie(w, cookie)
@@ -169,14 +172,17 @@ func (manager *Manager) SessionStart(w http.ResponseWriter, r *http.Request) (se
 				return nil, err
 			}
 			session, err = manager.provider.SessionRead(sid)
-			cookie = &http.Cookie{Name: manager.config.CookieName,
+			cookie = &http.Cookie{
+				Name:     manager.config.CookieName,
 				Value:    url.QueryEscape(sid),
 				Path:     "/",
 				HttpOnly: true,
-				Secure:   manager.config.Secure,
-				Domain:   manager.config.Domain}
-			if manager.config.CookieLifeTime >= 0 {
+				Secure:   manager.isSecure(r),
+				Domain:   manager.config.Domain,
+			}
+			if manager.config.CookieLifeTime > 0 {
 				cookie.MaxAge = manager.config.CookieLifeTime
+				cookie.Expires = time.Now().Add(time.Duration(manager.config.CookieLifeTime) * time.Second)
 			}
 			if manager.config.EnableSetCookie {
 				http.SetCookie(w, cookie)
@@ -231,7 +237,7 @@ func (manager *Manager) SessionRegenerateId(w http.ResponseWriter, r *http.Reque
 			Value:    url.QueryEscape(sid),
 			Path:     "/",
 			HttpOnly: true,
-			Secure:   manager.config.Secure,
+			Secure:   manager.isSecure(r),
 			Domain:   manager.config.Domain,
 		}
 	} else {
@@ -241,8 +247,9 @@ func (manager *Manager) SessionRegenerateId(w http.ResponseWriter, r *http.Reque
 		cookie.HttpOnly = true
 		cookie.Path = "/"
 	}
-	if manager.config.CookieLifeTime >= 0 {
+	if manager.config.CookieLifeTime > 0 {
 		cookie.MaxAge = manager.config.CookieLifeTime
+		cookie.Expires = time.Now().Add(time.Duration(manager.config.CookieLifeTime) * time.Second)
 	}
 	http.SetCookie(w, cookie)
 	r.AddCookie(cookie)
@@ -266,4 +273,18 @@ func (manager *Manager) sessionId(r *http.Request) (string, error) {
 		return "", fmt.Errorf("Could not successfully read from the system CSPRNG.")
 	}
 	return hex.EncodeToString(b), nil
+}
+
+// Set cookie with https.
+func (manager *Manager) isSecure(req *http.Request) bool {
+	if !manager.config.Secure {
+		return false
+	}
+	if req.URL.Scheme != "" {
+		return req.URL.Scheme == "https"
+	}
+	if req.TLS == nil {
+		return false
+	}
+	return true
 }

@@ -51,6 +51,7 @@ type RedisCache struct {
 	conninfo string
 	dbNum    int
 	key      string
+	password string
 }
 
 // create new redis cache with default collection name.
@@ -72,6 +73,39 @@ func (rc *RedisCache) Get(key string) interface{} {
 		return v
 	}
 	return nil
+}
+
+// GetMulti get cache from redis.
+func (rc *RedisCache) GetMulti(keys []string) []interface{} {
+	size := len(keys)
+	var rv []interface{}
+	c := rc.p.Get()
+	defer c.Close()
+	var err error
+	for _, key := range keys {
+		err = c.Send("GET", key)
+		if err != nil {
+			goto ERROR
+		}
+	}
+	if err = c.Flush(); err != nil {
+		goto ERROR
+	}
+	for i := 0; i < size; i++ {
+		if v, err := c.Receive(); err == nil {
+			rv = append(rv, v.([]byte))
+		} else {
+			rv = append(rv, err)
+		}
+	}
+	return rv
+ERROR:
+	rv = rv[0:0]
+	for i := 0; i < size; i++ {
+		rv = append(rv, nil)
+	}
+
+	return rv
 }
 
 // put cache to redis.
@@ -149,16 +183,20 @@ func (rc *RedisCache) StartAndGC(config string) error {
 	if _, ok := cf["key"]; !ok {
 		cf["key"] = DefaultKey
 	}
-
 	if _, ok := cf["conn"]; !ok {
 		return errors.New("config has no conn key")
 	}
 	if _, ok := cf["dbNum"]; !ok {
 		cf["dbNum"] = "0"
 	}
+	if _, ok := cf["password"]; !ok {
+		cf["password"] = ""
+	}
 	rc.key = cf["key"]
 	rc.conninfo = cf["conn"]
 	rc.dbNum, _ = strconv.Atoi(cf["dbNum"])
+	rc.password = cf["password"]
+
 	rc.connectInit()
 
 	c := rc.p.Get()
@@ -171,6 +209,17 @@ func (rc *RedisCache) StartAndGC(config string) error {
 func (rc *RedisCache) connectInit() {
 	dialFunc := func() (c redis.Conn, err error) {
 		c, err = redis.Dial("tcp", rc.conninfo)
+		if err != nil {
+			return nil, err
+		}
+
+		if rc.password != "" {
+			if _, err := c.Do("AUTH", rc.password); err != nil {
+				c.Close()
+				return nil, err
+			}
+		}
+
 		_, selecterr := c.Do("SELECT", rc.dbNum)
 		if selecterr != nil {
 			c.Close()

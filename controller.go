@@ -369,6 +369,7 @@ func (c *Controller) ParseForm(obj interface{}) error {
 	return ParseForm(c.Input(), obj)
 }
 
+// getValue returns the value to parse
 func (c *Controller) getValue(key string, def interface{}, fn func(string) (interface{}, error)) (interface{}, error) {
 	str := c.Ctx.Input.Query(key)
 	if str == "" {

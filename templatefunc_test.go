@@ -16,7 +16,6 @@ package fargo
 
 import (
 	"html/template"
-	"net/url"
 	"reflect"
 	"testing"
 	"time"
@@ -82,15 +81,15 @@ func TestCompareRelated(t *testing.T) {
 	if !Compare("1", 1) {
 		t.Error("should be equal")
 	}
-    if CompareNot("abc", "abc") {
-        t.Error("should be equal")
-    }
-    if !CompareNot("abc", "aBc") {
-        t.Error("should be not equal")
-    }
-    if !NotNil("a string") {
-        t.Error("should not be nil")
-    }
+	if CompareNot("abc", "abc") {
+		t.Error("should be equal")
+	}
+	if !CompareNot("abc", "aBc") {
+		t.Error("should be not equal")
+	}
+	if !NotNil("a string") {
+		t.Error("should not be nil")
+	}
 }
 
 func TestHtmlquote(t *testing.T) {
@@ -108,7 +107,6 @@ func TestHtmlunquote(t *testing.T) {
 		t.Error("should be equal")
 	}
 }
-
 
 func TestRenderForm(t *testing.T) {
 	type user struct {

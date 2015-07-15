@@ -109,62 +109,6 @@ func TestHtmlunquote(t *testing.T) {
 	}
 }
 
-func TestParseForm(t *testing.T) {
-	type user struct {
-		Id      int         `form:"-"`
-		tag     string      `form:"tag"`
-		Name    interface{} `form:"username"`
-		Age     int         `form:"age,text"`
-		Email   string
-		Intro   string    `form:",textarea"`
-		StrBool bool      `form:"strbool"`
-		Date    time.Time `form:"date,2006-01-02"`
-	}
-
-	u := user{}
-	form := url.Values{
-		"Id":       []string{"1"},
-		"-":        []string{"1"},
-		"tag":      []string{"no"},
-		"username": []string{"test"},
-		"age":      []string{"40"},
-		"Email":    []string{"test@gmail.com"},
-		"Intro":    []string{"I am an engineer!"},
-		"strbool":  []string{"yes"},
-		"date":     []string{"2014-11-12"},
-	}
-	if err := ParseForm(form, u); err == nil {
-		t.Fatal("nothing will be changed")
-	}
-	if err := ParseForm(form, &u); err != nil {
-		t.Fatal(err)
-	}
-	if u.Id != 0 {
-		t.Errorf("Id should equal 0 but got %v", u.Id)
-	}
-	if len(u.tag) != 0 {
-		t.Errorf("tag's length should equal 0 but got %v", len(u.tag))
-	}
-	if u.Name.(string) != "test" {
-		t.Errorf("Name should equal `test` but got `%v`", u.Name.(string))
-	}
-	if u.Age != 40 {
-		t.Errorf("Age should equal 40 but got %v", u.Age)
-	}
-	if u.Email != "test@gmail.com" {
-		t.Errorf("Email should equal `test@gmail.com` but got `%v`", u.Email)
-	}
-	if u.Intro != "I am an engineer!" {
-		t.Errorf("Intro should equal `I am an engineer!` but got `%v`", u.Intro)
-	}
-	if u.StrBool != true {
-		t.Errorf("strboll should equal `true`, but got `%v`", u.StrBool)
-	}
-	y, m, d := u.Date.Date()
-	if y != 2014 || m.String() != "November" || d != 12 {
-		t.Errorf("Date should equal `2014-11-12`, but got `%v`", u.Date.String())
-	}
-}
 
 func TestRenderForm(t *testing.T) {
 	type user struct {

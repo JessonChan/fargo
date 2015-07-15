@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package beego
+package fargo
 
 import (
 	"bytes"
@@ -369,128 +369,101 @@ func (c *Controller) ParseForm(obj interface{}) error {
 	return ParseForm(c.Input(), obj)
 }
 
+// getValue returns the value to parse
+func (c *Controller) getValue(key string, def interface{}, fn func(string) (interface{}, error)) (interface{}, error) {
+	str := c.Ctx.Input.Query(key)
+	if str == "" {
+		if reflect.TypeOf(def).Kind() == reflect.Slice {
+			vs := reflect.ValueOf(def)
+			if vs.Len() > 0 {
+				return vs.Index(0).Interface(), nil
+			}
+		}
+	}
+	return fn(str)
+}
+
 // GetString returns the input value by key string or the default value while it's present and input is blank
 func (c *Controller) GetString(key string, def ...string) string {
-	var defv string
-	if len(def) > 0 {
-		defv = def[0]
-	}
-
-	if v := c.Ctx.Input.Query(key); v != "" {
-		return v
-	} else {
-		return defv
-	}
+	v, _ := c.getValue(key, def, func(str string) (interface{}, error) {
+		return str
+	})
+	return v.(string)
 }
 
 // GetStrings returns the input string slice by key string or the default value while it's present and input is blank
 // it's designed for multi-value input field such as checkbox(input[type=checkbox]), multi-selection.
 func (c *Controller) GetStrings(key string, def ...[]string) []string {
-	var defv []string
-	if len(def) > 0 {
-		defv = def[0]
-	}
-
+	def = append(def, []string)
 	f := c.Input()
-	if f == nil {
-		return defv
+	if f != nil && len(f[key] > 0) {
+		return f[key]
 	}
-
-	vs := f[key]
-	if len(vs) > 0 {
-		return vs
-	} else {
-		return defv
-	}
+	return def[0]
 }
 
 // GetInt returns input as an int or the default value while it's present and input is blank
 func (c *Controller) GetInt(key string, def ...int) (int, error) {
-	if strv := c.Ctx.Input.Query(key); strv != "" {
-		return strconv.Atoi(strv)
-	} else if len(def) > 0 {
-		return def[0], nil
-	} else {
-		return strconv.Atoi(strv)
-	}
+	v, err := c.getValue(key, def, func(str string) (interface{}, error) {
+		return strconv.Atoi(str)
+	})
+	return v.(int), err
 }
 
 // GetInt8 return input as an int8 or the default value while it's present and input is blank
 func (c *Controller) GetInt8(key string, def ...int8) (int8, error) {
-	if strv := c.Ctx.Input.Query(key); strv != "" {
-		i64, err := strconv.ParseInt(strv, 10, 8)
-		i8 := int8(i64)
-		return i8, err
-	} else if len(def) > 0 {
-		return def[0], nil
-	} else {
-		i64, err := strconv.ParseInt(strv, 10, 8)
-		i8 := int8(i64)
-		return i8, err
-	}
+	v, err := c.getValue(key, def, func(str string) (interface{}, error) {
+		i64, err := strconv.ParseInt(str, 10, 8)
+		iv := int8(i64)
+		return iv, err
+	})
+	return v.(int8), err
 }
 
 // GetInt16 returns input as an int16 or the default value while it's present and input is blank
 func (c *Controller) GetInt16(key string, def ...int16) (int16, error) {
-	if strv := c.Ctx.Input.Query(key); strv != "" {
-		i64, err := strconv.ParseInt(strv, 10, 16)
-		i16 := int16(i64)
-		return i16, err
-	} else if len(def) > 0 {
-		return def[0], nil
-	} else {
-		i64, err := strconv.ParseInt(strv, 10, 16)
-		i16 := int16(i64)
-		return i16, err
-	}
+	v, err := c.getValue(key, def, func(str string) (interface{}, error) {
+		i64, err := strconv.ParseInt(str, 10, 16)
+		iv := int16(i64)
+		return iv, err
+	})
+	return v.(int16), err
 }
 
 // GetInt32 returns input as an int32 or the default value while it's present and input is blank
 func (c *Controller) GetInt32(key string, def ...int32) (int32, error) {
-	if strv := c.Ctx.Input.Query(key); strv != "" {
-		i64, err := strconv.ParseInt(c.Ctx.Input.Query(key), 10, 32)
-		i32 := int32(i64)
-		return i32, err
-	} else if len(def) > 0 {
-		return def[0], nil
-	} else {
-		i64, err := strconv.ParseInt(c.Ctx.Input.Query(key), 10, 32)
-		i32 := int32(i64)
-		return i32, err
-	}
+	v, err := c.getValue(key, def, func(str string) (interface{}, error) {
+		i64, err := strconv.ParseInt(str, 10, 32)
+		iv := int32(i64)
+		return iv, err
+	})
+	return v.(int32), err
 }
 
 // GetInt64 returns input value as int64 or the default value while it's present and input is blank.
 func (c *Controller) GetInt64(key string, def ...int64) (int64, error) {
-	if strv := c.Ctx.Input.Query(key); strv != "" {
-		return strconv.ParseInt(strv, 10, 64)
-	} else if len(def) > 0 {
-		return def[0], nil
-	} else {
-		return strconv.ParseInt(strv, 10, 64)
-	}
+	v, err := c.getValue(key, def, func(str string) (interface{}, error) {
+		i64, err := strconv.ParseInt(str, 10, 64)
+		iv := int64(i64)
+		return iv, err
+	})
+	return v.(int64), err
 }
 
 // GetBool returns input value as bool or the default value while it's present and input is blank.
 func (c *Controller) GetBool(key string, def ...bool) (bool, error) {
-	if strv := c.Ctx.Input.Query(key); strv != "" {
-		return strconv.ParseBool(strv)
-	} else if len(def) > 0 {
-		return def[0], nil
-	} else {
-		return strconv.ParseBool(strv)
-	}
+	v, err := c.getValue(key, def, func(str string) (interface{}, error) {
+		return strconv.ParseBool(str)
+	})
+	return v.(bool), err
 }
 
 // GetFloat returns input value as float64 or the default value while it's present and input is blank.
 func (c *Controller) GetFloat(key string, def ...float64) (float64, error) {
-	if strv := c.Ctx.Input.Query(key); strv != "" {
-		return strconv.ParseFloat(strv, 64)
-	} else if len(def) > 0 {
-		return def[0], nil
-	} else {
-		return strconv.ParseFloat(strv, 64)
-	}
+	v, err := c.getValue(key, def, func(str string) (interface{}, error) {
+		return strconv.ParseFloat(str, 64)
+	})
+	return v.(float64), err
 }
 
 // GetFile returns the file data in file upload field named as key.

@@ -12,64 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package beego
+package fargo
 
 import (
-	"fmt"
+	"testing"
+
+	"net/http"
+
 	"github.com/astaxie/beego/context"
 )
 
-func ExampleGetInt() {
-
-	i := &context.BeegoInput{Params: map[string]string{"age": "40"}}
+func TestGetInt_1(t *testing.T) {
+	r, _ := http.NewRequest("GET", "/", nil)
+	i := &context.BeegoInput{Params: map[string]string{"age": "40"}, Request: r}
 	ctx := &context.Context{Input: i}
 	ctrlr := Controller{Ctx: ctx}
 
-	val, _ := ctrlr.GetInt("age")
-	fmt.Printf("%T", val)
+	//	val, _ := ctrlr.GetInt("age")
+	//	if val != 40 {
+	//		t.Fail()
+	//	}
+	val, err := ctrlr.GetInt("age2", 19)
+	t.Log(val, err)
+	if val != 19 {
+		t.Fail()
+	}
 	//Output: int
-}
-
-func ExampleGetInt8() {
-
-	i := &context.BeegoInput{Params: map[string]string{"age": "40"}}
-	ctx := &context.Context{Input: i}
-	ctrlr := Controller{Ctx: ctx}
-
-	val, _ := ctrlr.GetInt8("age")
-	fmt.Printf("%T", val)
-	//Output: int8
-}
-
-func ExampleGetInt16() {
-
-	i := &context.BeegoInput{Params: map[string]string{"age": "40"}}
-	ctx := &context.Context{Input: i}
-	ctrlr := Controller{Ctx: ctx}
-
-	val, _ := ctrlr.GetInt16("age")
-	fmt.Printf("%T", val)
-	//Output: int16
-}
-
-func ExampleGetInt32() {
-
-	i := &context.BeegoInput{Params: map[string]string{"age": "40"}}
-	ctx := &context.Context{Input: i}
-	ctrlr := Controller{Ctx: ctx}
-
-	val, _ := ctrlr.GetInt32("age")
-	fmt.Printf("%T", val)
-	//Output: int32
-}
-
-func ExampleGetInt64() {
-
-	i := &context.BeegoInput{Params: map[string]string{"age": "40"}}
-	ctx := &context.Context{Input: i}
-	ctrlr := Controller{Ctx: ctx}
-
-	val, _ := ctrlr.GetInt64("age")
-	fmt.Printf("%T", val)
-	//Output: int64
 }

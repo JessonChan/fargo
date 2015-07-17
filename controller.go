@@ -386,7 +386,7 @@ func (c *Controller) getValue(key string, def interface{}, fn func(string) (inte
 // GetString returns the input value by key string or the default value while it's present and input is blank
 func (c *Controller) GetString(key string, def ...string) string {
 	v, _ := c.getValue(key, def, func(str string) (interface{}, error) {
-		return str
+		return str, nil
 	})
 	return v.(string)
 }

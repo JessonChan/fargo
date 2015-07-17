@@ -33,6 +33,8 @@ import (
 	"strconv"
 	"strings"
 
+	"fmt"
+
 	"github.com/astaxie/beego/session"
 )
 
@@ -259,15 +261,13 @@ func AddAPPStartHook(hf hookfunc) {
 // beego.Run(":8089")
 // beego.Run("127.0.0.1:8089")
 func Run(params ...string) {
-	if len(params) > 0 && params[0] != "" {
-		strs := strings.Split(params[0], ":")
-		if len(strs) > 0 && strs[0] != "" {
-			HttpAddr = strs[0]
-		}
-		if len(strs) > 1 && strs[1] != "" {
-			HttpPort, _ = strconv.Atoi(strs[1])
-		}
+	params = append(params, fmt.Sprintf("%s:%d", HttpAddr, HttpPort))
+	addr := strings.Split(params[0], ":")
+	if len(addr) == 2 {
+		HttpAddr = addr[0]
+		HttpPort, _ = strconv.Atoi(addr[1])
 	}
+
 	initBeforeHttpRun()
 
 	if EnableAdmin {

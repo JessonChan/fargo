@@ -396,7 +396,7 @@ func (c *Controller) GetString(key string, def ...string) string {
 func (c *Controller) GetStrings(key string, def ...[]string) []string {
 	def = append(def, []string{})
 	f := c.Input()
-	if f != nil && len(f[key] > 0) {
+	if f != nil && len(f[key]) > 0 {
 		return f[key]
 	}
 	return def[0]

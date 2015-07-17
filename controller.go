@@ -394,7 +394,7 @@ func (c *Controller) GetString(key string, def ...string) string {
 // GetStrings returns the input string slice by key string or the default value while it's present and input is blank
 // it's designed for multi-value input field such as checkbox(input[type=checkbox]), multi-selection.
 func (c *Controller) GetStrings(key string, def ...[]string) []string {
-	def = append(def, []string)
+	def = append(def, []string{})
 	f := c.Input()
 	if f != nil && len(f[key] > 0) {
 		return f[key]

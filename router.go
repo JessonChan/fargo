@@ -400,7 +400,7 @@ func (p *ControllerRegistor) AddAutoPrefix(prefix string, c ControllerInterface)
 }
 
 // Add a FilterFunc with pattern rule and action constant.
-// The bool params is for setting the returnOnOutput value (false allows multiple filters to execute)
+// The bool params is for setting the returnOnOutput value (default allows multiple filters to execute,and set false to disable)
 func (p *ControllerRegistor) InsertFilter(pattern string, pos int, filter FilterFunc, params ...bool) error {
 
 	mr := new(FilterRouter)
@@ -410,11 +410,7 @@ func (p *ControllerRegistor) InsertFilter(pattern string, pos int, filter Filter
 	if !RouterCaseSensitive {
 		pattern = strings.ToLower(pattern)
 	}
-	if len(params) == 0 {
-		mr.returnOnOutput = true
-	} else {
-		mr.returnOnOutput = params[0]
-	}
+	mr.returnOnOutput = append(params, true)[0]
 	mr.tree.AddRouter(pattern, true)
 	return p.insertFilterRouter(pos, mr)
 }
@@ -617,7 +613,7 @@ func (p *ControllerRegistor) ServeHTTP(rw http.ResponseWriter, r *http.Request) 
 					if ok, params := filterR.ValidRouter(urlPath); ok {
 						for k, v := range params {
 							if context.Input.Params == nil {
-								context.Input.Params = make(map[string]string)	
+								context.Input.Params = make(map[string]string)
 							}
 							context.Input.Params[k] = v
 						}

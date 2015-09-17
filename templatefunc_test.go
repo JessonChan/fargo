@@ -16,6 +16,7 @@ package fargo
 
 import (
 	"html/template"
+	"net/url"
 	"reflect"
 	"testing"
 	"time"
@@ -39,7 +40,7 @@ func TestHtml2str(t *testing.T) {
 
 
 	\n`
-	if Html2str(h) != "123\\n\n\\n" {
+	if HTML2str(h) != "123\\n\n\\n" {
 		t.Error("should be equal")
 	}
 }
@@ -108,9 +109,66 @@ func TestHtmlunquote(t *testing.T) {
 	}
 }
 
-func TestRenderForm(t *testing.T) {
+func TestParseForm(t *testing.T) {
 	type user struct {
 		Id      int         `form:"-"`
+		tag     string      `form:"tag"`
+		Name    interface{} `form:"username"`
+		Age     int         `form:"age,text"`
+		Email   string
+		Intro   string    `form:",textarea"`
+		StrBool bool      `form:"strbool"`
+		Date    time.Time `form:"date,2006-01-02"`
+	}
+
+	u := user{}
+	form := url.Values{
+		"Id":       []string{"1"},
+		"-":        []string{"1"},
+		"tag":      []string{"no"},
+		"username": []string{"test"},
+		"age":      []string{"40"},
+		"Email":    []string{"test@gmail.com"},
+		"Intro":    []string{"I am an engineer!"},
+		"strbool":  []string{"yes"},
+		"date":     []string{"2014-11-12"},
+	}
+	if err := ParseForm(form, u); err == nil {
+		t.Fatal("nothing will be changed")
+	}
+	if err := ParseForm(form, &u); err != nil {
+		t.Fatal(err)
+	}
+	if u.Id != 0 {
+		t.Errorf("Id should equal 0 but got %v", u.Id)
+	}
+	if len(u.tag) != 0 {
+		t.Errorf("tag's length should equal 0 but got %v", len(u.tag))
+	}
+	if u.Name.(string) != "test" {
+		t.Errorf("Name should equal `test` but got `%v`", u.Name.(string))
+	}
+	if u.Age != 40 {
+		t.Errorf("Age should equal 40 but got %v", u.Age)
+	}
+	if u.Email != "test@gmail.com" {
+		t.Errorf("Email should equal `test@gmail.com` but got `%v`", u.Email)
+	}
+	if u.Intro != "I am an engineer!" {
+		t.Errorf("Intro should equal `I am an engineer!` but got `%v`", u.Intro)
+	}
+	if u.StrBool != true {
+		t.Errorf("strboll should equal `true`, but got `%v`", u.StrBool)
+	}
+	y, m, d := u.Date.Date()
+	if y != 2014 || m.String() != "November" || d != 12 {
+		t.Errorf("Date should equal `2014-11-12`, but got `%v`", u.Date.String())
+	}
+}
+
+func TestRenderForm(t *testing.T) {
+	type user struct {
+		ID      int         `form:"-"`
 		tag     string      `form:"tag"`
 		Name    interface{} `form:"username"`
 		Age     int         `form:"age,text,年龄："`
@@ -184,5 +242,82 @@ func TestParseFormTag(t *testing.T) {
 	label, name, fType, id, class, ignored = parseFormTag(objT.Field(4))
 	if ignored == false {
 		t.Errorf("Form Tag that should be ignored was not correctly parsed.")
+	}
+}
+
+func TestMapGet(t *testing.T) {
+	// test one level map
+	m1 := map[string]int64{
+		"a": 1,
+		"1": 2,
+	}
+
+	if res, err := MapGet(m1, "a"); err == nil {
+		if res.(int64) != 1 {
+			t.Errorf("Should return 1, but return %v", res)
+		}
+	} else {
+		t.Errorf("Error happens %v", err)
+	}
+
+	if res, err := MapGet(m1, "1"); err == nil {
+		if res.(int64) != 2 {
+			t.Errorf("Should return 2, but return %v", res)
+		}
+	} else {
+		t.Errorf("Error happens %v", err)
+	}
+
+	if res, err := MapGet(m1, 1); err == nil {
+		if res.(int64) != 2 {
+			t.Errorf("Should return 2, but return %v", res)
+		}
+	} else {
+		t.Errorf("Error happens %v", err)
+	}
+
+	// test 2 level map
+	m2 := map[string]interface{}{
+		"1": map[string]float64{
+			"2": 3.5,
+		},
+	}
+
+	if res, err := MapGet(m2, 1, 2); err == nil {
+		if res.(float64) != 3.5 {
+			t.Errorf("Should return 3.5, but return %v", res)
+		}
+	} else {
+		t.Errorf("Error happens %v", err)
+	}
+
+	// test 5 level map
+	m5 := map[string]interface{}{
+		"1": map[string]interface{}{
+			"2": map[string]interface{}{
+				"3": map[string]interface{}{
+					"4": map[string]interface{}{
+						"5": 1.2,
+					},
+				},
+			},
+		},
+	}
+
+	if res, err := MapGet(m5, 1, 2, 3, 4, 5); err == nil {
+		if res.(float64) != 1.2 {
+			t.Errorf("Should return 1.2, but return %v", res)
+		}
+	} else {
+		t.Errorf("Error happens %v", err)
+	}
+
+	// check whether element not exists in map
+	if res, err := MapGet(m5, 5, 4, 3, 2, 1); err == nil {
+		if res != nil {
+			t.Errorf("Should return nil, but return %v", res)
+		}
+	} else {
+		t.Errorf("Error happens %v", err)
 	}
 }
